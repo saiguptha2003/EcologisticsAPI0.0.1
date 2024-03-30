@@ -53,7 +53,7 @@ async function addTransporterSecondaryDetails(transporterID, phoneNumber, adharC
         await connection.execute('INSERT INTO TransporterUserData (TransporterId, Phonenumber, AdharCard, PanCard, Username, Address) VALUES (?, ?, ?, ?, ?, ?)',
             [transporterID, phoneNumber, adharCard, panCard, username, address]);
         connection.release();
-        return { success: true, uuid: transporterID };
+        return { success: true, uuid: transporterID,username:username };
     } catch (error) {
         return { success: false, error: 2, message: 'Error adding transporter secondary details' };
     }
