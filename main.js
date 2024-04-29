@@ -90,6 +90,7 @@ app.post('/TransporterLogin', async (req, res) => {
     console.log(req.body);
     try {
         const resultPrimary = await db.checkTransporter(email, password);
+        console.log(resultPrimary);
         if (resultPrimary.success) {
             console.log(resultPrimary);
             req.session.transporterId = resultPrimary.transporterid;

@@ -63,7 +63,7 @@ async function checkTransporter(email, password) {
         const connection = await pool.getConnection();
         const [rows, fields] = await connection.execute('SELECT * FROM Transporter WHERE Email = ?', [email]);
         connection.release();
-        
+        console.log(rows);
         if (rows.length === 0) {
             return { success: false, message: 'Invalid email or password' };
         }
@@ -96,4 +96,62 @@ module.exports = {
     checkTransporter,
     checkDatabaseConnection
 };
+checkDatabaseConnection().then((result) => {
+    console.log(result);
+});
 
+async function addOrderToMongoDB(orderData) {
+    const uri = 'mongodb://localhost:27017';
+    const dbName = 'Ecologistics'; 
+    const collectionName = 'Orders'; 
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    
+    try {
+      await client.connect();
+      const db = client.db(dbName);
+      const ordersCollection = db.collection(collectionName);
+      const result = await ordersCollection.insertOne(orderData);
+      console.log(`Order added with ID: ${result.insertedId}`);
+      return { success: true, message: 'Order added successfully', orderId: result.insertedId };
+    } catch (error) {
+      console.error('Error occurred while adding order to MongoDB:', error);
+      if (error.code === 11000) { // Duplicate key error
+        return { success: false, message: 'Order with the same ID already exists' };
+      }
+      return { success: false, message: 'Failed to add order to MongoDB' };
+    } finally {
+      await client.close();
+    }
+  }
+  
+  async function findOrders(from, to, weight, type) {
+    const uri = 'mongodb://localhost:27017';
+    const dbName = 'Ecologistics'; 
+    const collectionName = 'Orders'; 
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    
+    try {
+      await client.connect();
+      const db = client.db(dbName);
+      const ordersCollection = db.collection(collectionName);
+      
+      // Construct the query based on the provided criteria
+      const query = {
+        'orders.orderID2.from': from,
+        'orders.orderID2.to': to,
+        'orders.orderID2.weight': weight,
+        'orders.orderID2.type': type
+      };
+      
+      // Find orders matching the query
+      const orders = await ordersCollection.find(query).toArray();
+      
+      return orders;
+    } catch (error) {
+      console.error('Error occurred while finding orders in MongoDB:', error);
+      return [];
+    } finally {
+      await client.close();
+    }
+  }
+  

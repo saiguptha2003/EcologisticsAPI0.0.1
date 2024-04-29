@@ -54,4 +54,8 @@ async function getAllTransporters() {
     }
 }
 
-getAllTransporters();
+console.log('Getting all transporters');
+// console.log(getAllTransporters()    );
+console.log(findTransporter('8dd439c3-eff7-434f-9756-0cc26bf86ca7'))
+
+
