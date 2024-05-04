@@ -92,10 +92,10 @@ app.post('/TransporterLogin', async (req, res) => {
         const resultPrimary = await db.checkTransporter(email, password);
         console.log(resultPrimary);
         if (resultPrimary.success) {
-            console.log(resultPrimary);
+            console.log(resultPrimary,'234324234243243');
             req.session.transporterId = resultPrimary.transporterid;
-            req.session.email = resultPrimary.email;
-            res.send({ success: true, transporterId:resultPrimary['transporter']['TransporterID'], email: resultPrimary.email });
+            req.session.email = resultPrimary['transporter']['email'];
+            res.send({ success: true, transporterId:resultPrimary['transporter']['TransporterID'], email:resultPrimary['transporter']['Email']  });
         } else {
             res.send(resultPrimary);
         }
@@ -107,6 +107,18 @@ app.post('/TransporterLogin', async (req, res) => {
 app.get('/TransporterLogout', (req, res) => {
     req.session.destroy();
     res.send({ success: true });
+});
+app.post('/Transporter/userData', async (req, res) => {
+    const transporterId = req.body.transporterId;
+    console.log(req.body);
+    try {
+        const resultPrimary = await db.getTransporterData(transporterId);
+        console.log(resultPrimary);
+        res.send(resultPrimary);
+    } catch (error) {
+        console.error({ success: false, error: error });
+        res.status(500).send({ success: false, error: error.message });
+    }
 });
 
 app.post('/Transporter/:uuid/findOrders', async (req, res) => {

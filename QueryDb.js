@@ -52,12 +52,97 @@ async function addTransporterSecondaryDetails(transporterID, phoneNumber, adharC
         }
         await connection.execute('INSERT INTO TransporterUserData (TransporterId, Phonenumber, AdharCard, PanCard, Username, Address) VALUES (?, ?, ?, ?, ?, ?)',
             [transporterID, phoneNumber, adharCard, panCard, username, address]);
+            console.log(transporterFormat);
         connection.release();
+        const transporterFormat = {
+            transporterID: transporterID,
+            phoneNumber: phoneNumber,
+            adharCard: adharCard,
+            panCard: panCard,
+            username: username,
+            address: address,
+            email: email,
+            orders: {},
+            settings: {
+                notification: true,
+                location: true,
+                payment: true
+            },
+            wallet: {
+                balance: 0,
+                credit: 0,
+                debit: 0,
+                upiDetails: {
+                    upiID: "",
+                    upiName: "",
+                    upiBank: "",
+                    upiIFSC: "",
+                    upiImage: "",
+                    upiAddress: "",
+                    upiCity: "",
+                    upiState: "",
+                    upiCountry: "",
+                    upiPincode: ""
+                },
+                bankDetails: {
+                    bankName: "",
+                    bankBranch: "",
+                    bankIFSC: "",
+                    bankAccountNumber: "",
+                    bankAccountName: "",
+                    bankAddress: "",
+                    bankCity: "",
+                    bankState: "",
+                    bankCountry: "",
+                    bankPincode: ""
+                },
+                walletImage: "",
+                transactions: {}
+            },
+            ProfileDetails: {
+                PhotoUrl: "",
+                name: username,
+                dob: "",
+                panCard: panCard,
+                adharCard: adharCard,
+                license: "",
+                vehicle: "",
+                vehicleNumber: "",
+                vehicleType: "",
+                vehicleCapacity: "",
+                vehicleImage: "",
+                transporterImage: ""
+            }
+        };
+        
+        
+        await createUserInMongo(transporterFormat);
         return { success: true, uuid: transporterID,username:username };
     } catch (error) {
-        return { success: false, error: 2, message: 'Error adding transporter secondary details' };
+        console.log(error.message);
+        return { success: false, error: 2, message: error.message  };
     }
 }
+async function createUserInMongo(transportersData) {
+    const uri = 'mongodb://localhost:27017';
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    try {
+        await client.connect();
+
+        const database = client.db('Ecologistics');
+        const collection = database.collection('Transporter');
+
+        await collection.insertOne(transportersData);
+
+        console.log('User created in MongoDB');
+    } catch (error) {
+        console.error('Error creating user in MongoDB:', error);
+    } finally {
+        await client.close();
+    }
+}
+
 async function checkTransporter(email, password) {
     try {
         const connection = await pool.getConnection();
@@ -70,6 +155,7 @@ async function checkTransporter(email, password) {
 
         const transporter = rows[0];
         if (transporter.PasswordHash === password) {
+            console.log(transporter);
             return { success: true, transporter: transporter };
         } else {
             return { success: false, message: 'Invalid email or password' };
@@ -90,11 +176,27 @@ async function checkDatabaseConnection() {
     }
 }
 
+async function getTransporterData(transporterId) {
+    try {
+        const connection = await pool.getConnection();
+        const [rows, fields] = await connection.execute('SELECT * FROM TransporterUserData WHERE TransporterID = ?', [transporterId]);
+        connection.release();
+        if (rows.length === 0) {
+            return { success: false, message: 'Transporter not found' };
+        }
+        return { success: true, transporter: rows[0] };
+    } catch (error) {
+        return { success: false, message: 'Internal server error' };
+    }
+
+}
+
 module.exports = {
     addTransporterPrimaryDetails,
     addTransporterSecondaryDetails,
     checkTransporter,
-    checkDatabaseConnection
+    checkDatabaseConnection,
+    getTransporterData,
 };
 checkDatabaseConnection().then((result) => {
     console.log(result);
